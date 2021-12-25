@@ -1,0 +1,98 @@
+<html lang="en">
+
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css"
+        integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
+
+    <title>Chat Assessment</title>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="row d-flex justify-content-center">
+            <div class="col-6">
+                <p>Me: {{source.username}}</p>
+                <p>Destination: {{destination.username}}</p>
+                <label for="exampleFormControlTextarea1" class="h4 pt-5">Chatroom</label>
+                <ul id="chat-messages">
+                    {% for msg in messages %}
+                        {% if msg.seen and msg.sender == source %}
+                            <li id=msg_{{msg.id}}>{{msg.sender.username}}: {{msg.text}} &#10004;</li>
+                        {% else %}
+                            <li id=msg_{{msg.id}}>{{msg.sender.username}}: {{msg.text}}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul><br>
+                <form>
+                    <div class="form-group">
+                        <input class="form-control" id="input" type="text"></br>
+                    </div>
+                    <input class="btn btn-secondary btn-lg btn-block" id="submit" type="button" value="Send">
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {{ source.username|json_script:"current_username" }}
+    <script>
+        // const user_username = JSON.parse(document.getElementById('user_username').textContent);
+        document.querySelector('#submit').onclick = function (e) {
+            const messageInputDom = document.querySelector('#input');
+            const message = messageInputDom.value;
+            chatSocket.send(JSON.stringify({
+                'message': message,
+                "type": "message"
+                // 'username': user_username,
+            }));
+            messageInputDom.value = '';
+            e.preventDefault();
+        };
+
+        let url = "ws://" + window.location.host + '/ws' + window.location.pathname;
+        const query = window.location.href.split("?");
+        if (query.length == 2){
+            url += "?" + query[1];
+        };
+
+        const chatSocket = new WebSocket(url);
+
+        chatSocket.onmessage = function (e) {
+            const uname = document.getElementById("current_username").textContent
+            const data = JSON.parse(e.data);
+            if (data.type == "message"){
+                const messages = document.querySelector('#chat-messages');
+                var new_message = document.createElement("li")
+                new_message.setAttribute('id', "msg_"+data.message_id);
+                new_message.append(document.createTextNode((data.sender + ': ' + data.message)))
+                messages.append(new_message);
+                if (data.sender != JSON.parse(uname) && !data.seen){
+                    chatSocket.send(JSON.stringify({
+                    'type': "receipt",
+                    "message_id": data.message_id
+                }));
+                }
+            }else if (data.type == "receipt" && data.sender == JSON.parse(uname)){
+                var msg = document.getElementById("msg_"+data.message_id)
+                msg_text = msg.innerHTML
+                msg.innerHTML = msg_text + " &#10004;"
+            }
+        }
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"
+        integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"
+        integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous">
+    </script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"
+        integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous">
+    </script>
+</body>
+
+</html>
