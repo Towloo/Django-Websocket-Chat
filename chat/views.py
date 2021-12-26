@@ -22,8 +22,7 @@ def room(req, username):
                 "source": token.user,
                 "messages": thread.message_set.all()
             })
-    except Exception as e:
-        print(e)
+    except:
         pass
     return redirect("login")
 
