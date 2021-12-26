@@ -1,0 +1,30 @@
+name: Docker Image Build and Push to Github Registry
+
+on: [push]
+
+jobs:
+  build:
+    name: Build Docker image and Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      
+      - name: Write key files
+        run: |
+          mkdir cert
+          echo "${{ secrets.PKEY }}" > cert/key.key
+          echo "${{ secrets.PUBKEY }}" > cert/cert.crt
+          
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GPT }}
+      
+      - name: Build the image
+        run: |
+          docker build --build-arg SECRET_KEY=${{ secrets.SECRET_KEY }} --tag ghcr.io/towloo/assessment:latest .
+          docker push ghcr.io/towloo/assessment:latest

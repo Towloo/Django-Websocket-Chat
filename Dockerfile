@@ -3,6 +3,9 @@ FROM python:3.8.11-slim-buster
 # Env & Arg variables
 ARG USERNAME=towloo
 ARG USERPASS=passpass
+ARG SECRET_KEY
+
+ENV SECRET_KEY=$SECRET_KEY
 
 # Set the working directory to /app
 WORKDIR /app
@@ -33,10 +36,11 @@ COPY . /app
 
 # Set volumes
 WORKDIR /app
-EXPOSE 8000
+EXPOSE 443
 
 USER root
 RUN chmod +x /app/bash.sh
+RUN mkdir -p /app/staticfiles && chmod 777 /app/staticfiles
 
 USER $USERNAME
 

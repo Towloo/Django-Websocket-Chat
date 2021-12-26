@@ -8,9 +8,12 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.current_user = self.scope["user"]
-        username = self.scope["url_route"]["kwargs"]["username"]
-        self.user = await sync_to_async(User.objects.get)(username=username)
+        try:
+            username = self.scope["url_route"]["kwargs"]["username"]
+            self.user = await sync_to_async(User.objects.get)(username=username)
+            self.current_user = self.scope["user"]
+        except:
+            await self.disconnect()
         self.thread = await sync_to_async(Thread.objects.get_or_create_thread)(self.current_user, self.user)
         self.room_name = f"chat_{self.thread.id}"
         await self.channel_layer.group_add(

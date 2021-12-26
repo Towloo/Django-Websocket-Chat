@@ -41,20 +41,18 @@
 
     {{ source.username|json_script:"current_username" }}
     <script>
-        // const user_username = JSON.parse(document.getElementById('user_username').textContent);
         document.querySelector('#submit').onclick = function (e) {
             const messageInputDom = document.querySelector('#input');
             const message = messageInputDom.value;
             chatSocket.send(JSON.stringify({
                 'message': message,
                 "type": "message"
-                // 'username': user_username,
             }));
             messageInputDom.value = '';
             e.preventDefault();
         };
 
-        let url = "ws://" + window.location.host + '/ws' + window.location.pathname;
+        let url = "wss://" + window.location.host + '/ws' + window.location.pathname;
         const query = window.location.href.split("?");
         if (query.length == 2){
             url += "?" + query[1];
