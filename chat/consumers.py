@@ -12,6 +12,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
             username = self.scope["url_route"]["kwargs"]["username"]
             self.user = await sync_to_async(User.objects.get)(username=username)
             self.current_user = self.scope["user"]
+            if self.user == self.current_user:
+                raise Exception
             self.thread = await sync_to_async(Thread.objects.get_or_create_thread)(self.current_user, self.user)
             self.room_name = f"chat_{self.thread.id}"
             await self.channel_layer.group_add(
@@ -21,14 +23,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
             await self.accept()
         except:
-            await self.disconnect()
+            """
+            Requests with invalid URL will not be allowed
+            """
+            await self.close()
 
     
-    async def disconnect(self, _):
+    async def disconnect(self, code=None):
         await self.channel_layer.group_discard(
             self.room_name,
             self.channel_name
         )
+
     async def receive(self, text_data):
         data = json.loads(text_data)
         mtype = data.get("type")
@@ -59,6 +65,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
                         "sender": message.sender.username
                     }
                 )
+        else:
+            await self.disconnect()
     
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
